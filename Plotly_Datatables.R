@@ -1,4 +1,4 @@
-# Altered from template: https://plot.ly/r/datatable/
+
 library(shiny)
 library(dplyr)
 library(shinythemes)
@@ -75,14 +75,17 @@ ui <- fluidPage(
              sidebarLayout(
                sidebarPanel(
                  # "Empty inputs" - they will be updated after the data is uploaded
-                 selectInput('mz1', 'Indicate the m/z Variable', ""),
+                 selectInput('mz1', 'Specify the m/z Variable', ""),
+                 selectInput("intensity2", "Specify intensity variable", ""),
+                 actionButton("go_2", "Calculate"),
+                 tags$hr(),
                  selectInput('xvar1', 'X variable', ""),
                  selectInput("yvar1", "Y variable", ""),
                  sliderInput("slide1", "Mass error (ppm)",min = 1, max = 500, value = 10, step = 1),
                  textInput("text1", "MD base (optional)"),
                  numericInput("num1", label = "Input MD base nominal mass (Da)", value = 12),
                  numericInput("num2", label = "Input IUPAC exact mass (Da)", value = 12.0000),
-                 actionButton('go_2', 'Plot')
+                 actionButton('go_3', 'Plot')
                  
                ),
                mainPanel(
@@ -128,6 +131,8 @@ server <- function(input, output, session) {
     updateSelectInput(session, inputId = 'hover', label = 'Hover text',
                       choices = names(df), selected = names(df)[4])
     updateSelectInput(session, inputId = 'mz1', label = 'Specify the m/z of the dataset',
+                      choices = names(df), selected = names(df)[2])
+    updateSelectInput(session, inputId = 'intensity2', label = 'Specify the intensity variable',
                       choices = names(df), selected = names(df)[2])
     return(df)
   })
@@ -211,7 +216,7 @@ server <- function(input, output, session) {
   
   
   
-#OE#  
+  #OE#  
   observeEvent(input$go_2, {  
     m <- MD_data ()
     
@@ -219,8 +224,8 @@ server <- function(input, output, session) {
     m <- m %>% 
       mutate(Kmass = xmass()*MD_num1()/MD_num2()) %>% 
       mutate(Knom = round(Kmass, digits=0)) %>% 
-      mutate(KMD = round((Kmass - Knom), digits = 5)) %>%
-      mutate(Kmass = round(Kmass, digits = 5))
+      mutate(KMD = round((Kmass - Knom), digits = 6)) %>%
+      mutate(Kmass = round(Kmass, digits = 6))
     
     
     
@@ -254,7 +259,7 @@ server <- function(input, output, session) {
     # highlight selected rows in the table
     output$x1 <- DT::renderDataTable({
       m2 <- m[d$selection(),]
-      dt <- DT::datatable(m)
+      dt <- DT::datatable(m, editable = TRUE, rownames = FALSE, filter = "top")
       if (NROW(m2) == 0) {
         dt
       } else {
@@ -276,7 +281,7 @@ server <- function(input, output, session) {
       }
     })
   }) 
-#OE#
+  #OE#
   
   
 }
