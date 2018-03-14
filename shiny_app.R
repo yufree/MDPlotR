@@ -89,7 +89,7 @@ ui <- fluidPage(
                  
                ),
                mainPanel(
-                 plotlyOutput("x2"),
+                 plotlyOutput("DTPlot1"),
                  DT::dataTableOutput("x1"),
                  fluidRow(
                    p(class = 'text-center', downloadButton('x3', 'Download Filtered Data'))
@@ -134,6 +134,8 @@ server <- function(input, output, session) {
                       choices = names(df), selected = names(df)[2])
     updateSelectInput(session, inputId = 'intensity2', label = 'Specify the intensity variable',
                       choices = names(df), selected = names(df)[2])
+    
+    
     return(df)
   })
   
@@ -174,7 +176,9 @@ server <- function(input, output, session) {
     MD_data()[,input$hover]
   })
   
-  # using oberveEvent for actionbutton 'go_1' to initiate plotting instead of automatically plot when uploading file  
+  #OE#
+  # using oberveEvent for actionbutton 'go_1' to trigger plotting instead of automatically plot when uploading file  
+  
   observeEvent(input$go_1, {
     
     output$RawPlot1 <- renderPlotly({
@@ -197,27 +201,28 @@ server <- function(input, output, session) {
       )
     })
     
-  }) # end observeEvent
+  }) 
+  #OE#
   
   
-  ## For MD Plot Panel ## 
+  #### For MD Plot Panel ####
   
-  # nominal mass
-  MD_num1 <- reactive({
+  # input masses 
+  MD_num1 <- eventReactive(input$go_2, {
     input$num1
   })
-  #exact mass
-  MD_num2 <- reactive({
+  
+  MD_num2 <- eventReactive(input$go_2, {
     input$num2
   })
   
-  xmass <- reactive({
-    MD_data()[,input$mz1]})
-  
-  
+  xmass <- eventReactive(input$go_2, {
+    MD_data()[,input$mz1]
+    
+  })
   
   #OE#  
-  observeEvent(input$go_2, {  
+  observeEvent(input$go_3, {
     m <- MD_data ()
     
     # calculating the mass defect
@@ -227,30 +232,41 @@ server <- function(input, output, session) {
       mutate(KMD = round((Kmass - Knom), digits = 6)) %>%
       mutate(Kmass = round(Kmass, digits = 6))
     
+    # Problem with update X variable###  
     
+    updateSelectInput(session, inputId = 'xvar1', label = 'Specify the x variable for plot',
+                      choices = names(m), selected = names(m)[2])
+    updateSelectInput(session, inputId = 'yvar1', label = 'Specify the y variable for plot',
+                      choices = names(m), selected = names(m)[2])
     
+    MDplot_x1 <- reactive({
+      m[,input$xvar1]})
     
+    MDplot_y1 <- reactive({
+      m[,input$yvar1]})
+    
+    ########   
     d <- SharedData$new(m)
     
     
     # highlight selected rows in the scatterplot
-    output$x2 <- renderPlotly({
+    output$DTPlot1 <- renderPlotly({
       
       s <- input$x1_rows_selected
       
       if (!length(s)) {
         p <- d %>%
-          plot_ly(x = ~Kmass, y = ~KMD, mode = "markers", color = I('black'), name = 'Unfiltered') %>%
+          plot_ly(x = MDplot_x1(), y = MDplot_y1(), type = "scatter", mode = "markers", color = I('black'), name = 'Unfiltered') %>%
           layout(showlegend = T) %>% 
           highlight("plotly_selected", color = I('red'), selected = attrs_selected(name = 'Filtered'))
       } else if (length(s)) {
         pp <- m %>%
           plot_ly() %>% 
-          add_trace(x = ~Kmass, y = ~KMD, mode = "markers", color = I('black'), name = 'Unfiltered') %>%
+          add_trace(x = MDplot_x1(), y = MDplot_y1(), type = "scatter", mode = "markers", color = I('black'), name = 'Unfiltered') %>%
           layout(showlegend = T)
         
         # selected data
-        pp <- add_trace(pp, data = m[s, , drop = F], x = ~Kmass, y = ~KMD, mode = "markers",
+        pp <- add_trace(pp, data = m[s, , drop = F], x = MDplot_x1(), y = MDplot_y1(), type = "scatter", mode = "markers",
                         color = I('red'), name = 'Filtered')
       }
       
@@ -258,13 +274,13 @@ server <- function(input, output, session) {
     
     # highlight selected rows in the table
     output$x1 <- DT::renderDataTable({
-      m2 <- m[d$selection(),]
+      T_out1 <- m[d$selection(),]
       dt <- DT::datatable(m, editable = TRUE, rownames = FALSE, filter = "top")
-      if (NROW(m2) == 0) {
+      if (NROW(T_out1) == 0) {
         dt
       } else {
-        m2
-        # To display whole table and highlight selected rows then replace "m2" with below code chunk:
+        T_out1
+        # To display whole table and highlight selected rows then replace "T_out1" with below code chunk:
         # DT::formatStyle(dt, "rowname", target = "row",
         # color = DT::styleEqual(m2$rowname, rep("white", length(m2$rowname))),
         # backgroundColor = DT::styleEqual(m2$rowname, rep("black", length(m2$rowname))))
