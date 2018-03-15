@@ -13,6 +13,8 @@ ui <- fluidPage(
   theme = shinytheme('spacelab'),
   titlePanel("Mass Defect Plot"),
   tabsetPanel(
+    
+    # Upload Files Panel
     tabPanel("Upload File",
              titlePanel("Uploading Files"),
              sidebarLayout(
@@ -52,6 +54,8 @@ ui <- fluidPage(
                )
              )
     ),
+    
+    # Raw Plots Panel
     tabPanel("Raw plots",
              pageWithSidebar(
                headerPanel('Raw data plots'),
@@ -70,6 +74,7 @@ ui <- fluidPage(
                )
              )
     ),
+    # Mass Defect plots Panel
     tabPanel("MD Plots",
              titlePanel("PlotPanel"),
              sidebarLayout(
@@ -79,14 +84,13 @@ ui <- fluidPage(
                  selectInput("intensity2", "Specify intensity variable", ""),
                  actionButton("go_2", "Calculate"),
                  tags$hr(),
-                 selectInput('xvar1', 'X variable', ""),
-                 selectInput("yvar1", "Y variable", ""),
-                 sliderInput("slide1", "Mass error (ppm)",min = 1, max = 500, value = 10, step = 1),
                  textInput("text1", "MD base (optional)"),
                  numericInput("num1", label = "Input MD base nominal mass (Da)", value = 12),
                  numericInput("num2", label = "Input IUPAC exact mass (Da)", value = 12.0000),
-                 actionButton('go_3', 'Plot')
-                 
+                 actionButton('go_3', 'Plot'),
+                 selectInput('xvar1', 'X variable', ""),
+                 selectInput("yvar1", "Y variable", ""),
+                 uiOutput("slide1")
                ),
                mainPanel(
                  plotlyOutput("DTPlot1"),
@@ -159,6 +163,7 @@ server <- function(input, output, session) {
   
   
   ## For Raw Plots Panel ##
+  ##ADD https://plot.ly/r/shinyapp-linked-brush/ 
   
   # Defining input variables for plots
   
@@ -219,6 +224,16 @@ server <- function(input, output, session) {
   xmass <- eventReactive(input$go_2, {
     MD_data()[,input$mz1]
     
+  })
+  
+  output$slide1 <- renderUI({
+    int1 <- MD_data()[,input$intensity2]
+    
+    minZ <- round(min(int1), 2)
+    maxZ <- round(max(int1), 2)
+    
+    sliderInput("slide1", "Intensity filter",
+                min = minZ, max = maxZ, value = minZ)
   })
   
   #OE#  
@@ -282,8 +297,8 @@ server <- function(input, output, session) {
         T_out1
         # To display whole table and highlight selected rows then replace "T_out1" with below code chunk:
         # DT::formatStyle(dt, "rowname", target = "row",
-        # color = DT::styleEqual(m2$rowname, rep("white", length(m2$rowname))),
-        # backgroundColor = DT::styleEqual(m2$rowname, rep("black", length(m2$rowname))))
+        # color = DT::styleEqual(T_out1$rowname, rep("white", length(T_out1$rowname))),
+        # backgroundColor = DT::styleEqual(T_out1$rowname, rep("black", length(T_out1$rowname))))
       }
     })
     
