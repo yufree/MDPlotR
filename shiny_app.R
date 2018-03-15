@@ -90,7 +90,8 @@ ui <- fluidPage(
                  actionButton('go_3', 'Plot'),
                  selectInput('xvar1', 'X variable', ""),
                  selectInput("yvar1", "Y variable", ""),
-                 uiOutput("slide1")
+                 uiOutput("slide1"),
+                 textOutput("text1")
                ),
                mainPanel(
                  plotlyOutput("DTPlot1"),
@@ -144,12 +145,7 @@ server <- function(input, output, session) {
   })
   
   
-  # Adds a summary table for variables:
-  # output$summary <- renderTable({
-  # if(is.null(MD_data())){return()}
-  # summary(MD_data())
-  # })
-  
+  # add a table of the file
   output$contents <- renderTable({
     if(is.null(MD_data())){return()}
     
@@ -181,8 +177,8 @@ server <- function(input, output, session) {
     MD_data()[,input$hover]
   })
   
+  
   #OE#
-  # using oberveEvent for actionbutton 'go_1' to trigger plotting instead of automatically plot when uploading file  
   
   observeEvent(input$go_1, {
     
@@ -226,6 +222,11 @@ server <- function(input, output, session) {
     
   })
   
+  ab1 <- reactive({
+    MD_data()[,input$intensity2]
+  })
+  
+  
   output$slide1 <- renderUI({
     int1 <- MD_data()[,input$intensity2]
     
@@ -236,8 +237,11 @@ server <- function(input, output, session) {
                 min = minZ, max = maxZ, value = minZ)
   })
   
+  
+  
   #OE#  
   observeEvent(input$go_3, {
+    
     m <- MD_data ()
     
     # calculating the mass defect
@@ -245,7 +249,10 @@ server <- function(input, output, session) {
       mutate(Kmass = xmass()*MD_num1()/MD_num2()) %>% 
       mutate(Knom = round(Kmass, digits=0)) %>% 
       mutate(KMD = round((Kmass - Knom), digits = 6)) %>%
-      mutate(Kmass = round(Kmass, digits = 6))
+      mutate(Kmass = round(Kmass, digits = 6)) %>%
+      mutate(intensity = ab1()) %>%
+      filter(intensity > input$slide1)
+    
     
     # Problem with update X variable###  
     
