@@ -230,8 +230,8 @@ server <- function(input, output, session) {
   output$slide1 <- renderUI({
     int1 <- MD_data()[,input$intensity2]
     
-    minZ <- round(min(int1), 2)
-    maxZ <- round(max(int1), 2)
+    minZ <- min(int1)
+    maxZ <- max(int1)
     
     sliderInput("slide1", "Intensity filter",
                 min = minZ, max = maxZ, value = minZ)
