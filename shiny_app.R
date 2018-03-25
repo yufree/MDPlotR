@@ -77,58 +77,70 @@ ui <- fluidPage(
     # Mass Defect plots Panel
     tabPanel("MD Plots",
              sidebarLayout(
-                 sidebarPanel(
-                   # "Empty inputs" - they will be updated after the data is uploaded
-                   selectInput('mz1', 'Specify the m/z Variable', ""),
-                   selectInput("intensity2", "Specify intensity variable", ""),
-                   actionButton("go_2", "Calculate"),
-                   tags$hr(),
-                   fluidRow(
-                     h4("Mass defect calculations"),
-                     column(4,
-                            textInput("text1", "1st MD base (optional)")),
-                     column(4,
-                            numericInput("num1", label = "1. Nominal mass (Da)", value = 12)),
-                     column(4,
-                            numericInput("num2", label = "1. Exact mass (Da)", value = 12.0000))
-                   ),
-                   fluidRow(
-                     column(4,
-                            textInput("text2", "2nd MD base (optional)")),
-                     column(4,
-                            numericInput("num3", label = "2. Nominal mass (Da)", value = 12)),
-                     column(4,
-                            numericInput("num4", label = "2. Exact mass (Da)", value = 12.0000))
-                   ),
-                   actionButton('go_3', 'Update'),
-                   tags$br(),
-                   tags$hr(),
-                   fluidRow(h4("Plot controls"),
-                            tags$br(),
-                            column(5,
-                                   selectInput('xvar1', 'X variable', "")),
-                            column(1, style = "margin-top: 20px",
-                                   checkboxInput("box1", "log")),
-                            column(5,
-                                   selectInput("yvar1", "Y variable", "")),
-                            column(1, style = "margin-top: 20px",
-                                   checkboxInput("box2", "log"))
-                   ),
-                   tags$br(),
-                   checkboxInput("box3", "Display intensity in plot"),
-                   tags$br(),
-                   uiOutput("slide1"),
-                   actionButton("go_4", "Plot")
+               sidebarPanel(
+                 # "Empty inputs" - they will be updated after the data is uploaded
+                 selectInput('mz1', 'Specify the m/z Variable', ""),
+                 selectInput("intensity2", "Specify intensity variable", ""),
+                 actionButton("go_2", "Calculate"),
+                 tags$hr(),
+                 fluidRow(
+                   h4("Mass defect calculations"),
+                   column(4,
+                          textInput("text1", "1st MD base (optional)")),
+                   column(4,
+                          numericInput("num1", label = "1. Nominal mass (Da)", value = 12)),
+                   column(4,
+                          numericInput("num2", label = "1. Exact mass (Da)", value = 12.0000))
                  ),
-                 mainPanel(
-                   plotlyOutput("DTPlot1"),
-                   DT::dataTableOutput("x1"),
-                   fluidRow(
-                     p(class = 'text-center', downloadButton('x3', 'Download Filtered Data'))
-                   ))
-               )
+                 fluidRow(
+                   column(4,
+                          textInput("text2", "2nd MD base (optional)")),
+                   column(4,
+                          numericInput("num3", label = "2. Nominal mass (Da)", value = 12)),
+                   column(4,
+                          numericInput("num4", label = "2. Exact mass (Da)", value = 12.0000))
+                 ),
+                 actionButton('go_3', 'Update'),
+                 tags$br(),
+                 tags$hr(),
+                 fluidRow(h4("Plot controls"),
+                          tags$br(),
+                          column(5,
+                                 selectInput('xvar1', 'X variable', "")),
+                          column(1, style = "margin-top: 20px",
+                                 checkboxInput("box1", "log")),
+                          column(5,
+                                 selectInput("yvar1", "Y variable", "")),
+                          column(1, style = "margin-top: 20px",
+                                 checkboxInput("box2", "log"))
+                 ),
+                 fluidRow(column(5,
+                                 selectInput('xvar2', 'X variable', "")),
+                                 column(1, style = "margin-top: 20px",
+                                 checkboxInput("box3", "log")),
+                                 column(5,
+                                 selectInput("yvar2", "Y variable", "")),
+                                 column(1, style = "margin-top: 20px",
+                                 checkboxInput("box4", "log"))
+                 ),
+                 
+                 tags$br(),
+                 checkboxInput("box5", "Display intensity in plot"),
+                 tags$br(),
+                 uiOutput("slide1"),
+                 actionButton("go_4", "Plot")
+               ),
+               mainPanel(
+                 fluidRow(column(6, plotlyOutput("DTPlot1")),
+                          column(6, plotlyOutput("DTPlot2"))
+                 ),
+                 DT::dataTableOutput("x1"),
+                 fluidRow(
+                   p(class = 'text-center', downloadButton('x3', 'Download Filtered Data'))
+                 ))
              )
-)
+    )
+  )
 )
 
 
@@ -303,13 +315,22 @@ server <- function(input, output, session) {
                       choices = names(m), selected = names(m)[2])
     updateSelectInput(session, inputId = 'yvar1', label = 'Specify the y variable for plot',
                       choices = names(m), selected = names(m)[2])
-    
+    updateSelectInput(session, inputId = 'xvar2', label = 'Specify the x variable for plot',
+                      choices = names(m), selected = names(m)[2])
+    updateSelectInput(session, inputId = 'yvar2', label = 'Specify the y variable for plot',
+                      choices = names(m), selected = names(m)[2])
     
     MDplot_x1 <- reactive({
       m[,input$xvar1]})
     
     MDplot_y1 <- reactive({
       m[,input$yvar1]})
+    
+    MDplot_x2 <- reactive({
+      m[,input$xvar2]})
+    
+    MDplot_y2 <- reactive({
+      m[,input$yvar2]})
     
     ########   
     d <- SharedData$new(m)
@@ -338,6 +359,28 @@ server <- function(input, output, session) {
       
     })
     
+    # Plot 2
+    output$DTPlot2 <- renderPlotly({
+      
+      t <- input$x1_rows_selected
+      
+      if (!length(t)) {
+        p <- d %>%
+          plot_ly(x = MDplot_x2(), y = MDplot_y2(), type = "scatter", size = ~intensity, mode = "markers", color = I('black'), name = 'Unfiltered') %>%
+          layout(showlegend = T) %>% 
+          highlight("plotly_selected", color = I('red'), selected = attrs_selected(name = 'Filtered'))
+      } else if (length(t)) {
+        pp <- m %>%
+          plot_ly() %>% 
+          add_trace(x = MDplot_x2(), y = MDplot_y2(), type = "scatter", size = ~intensity, mode = "markers", color = I('black'), name = 'Unfiltered') %>%
+          layout(showlegend = T)
+        
+        # selected data
+        pp <- add_trace(pp, data = m[t, , drop = F], x = MDplot_x2(), y = MDplot_y2(), type = "scatter", size = ~intensity, mode = "markers",
+                        color = I('red'), name = 'Filtered')
+      }
+      
+    })
     # highlight selected rows in the table
     output$x1 <- DT::renderDataTable({
       T_out1 <- m[d$selection(),]
