@@ -55,7 +55,9 @@ ui <- fluidPage(
              )
     ),
     
-    # Raw Plots Panel
+    # Raw Plots Panel#
+    #Update with sunburst diagram
+    
     tabPanel("Raw plots",
              pageWithSidebar(
                headerPanel('Raw data plots'),
@@ -74,7 +76,7 @@ ui <- fluidPage(
                )
              )
     ),
-    # Mass Defect plots Panel
+    # Mass Defect plots Panel #
     tabPanel("MD Plots",
              sidebarLayout(
                sidebarPanel(
@@ -116,11 +118,11 @@ ui <- fluidPage(
                  ),
                  fluidRow(column(5,
                                  selectInput('xvar2', 'X variable', "")),
-                                 column(1, style = "margin-top: 20px",
+                          column(1, style = "margin-top: 20px",
                                  checkboxInput("box3", "log")),
-                                 column(5,
+                          column(5,
                                  selectInput("yvar2", "Y variable", "")),
-                                 column(1, style = "margin-top: 20px",
+                          column(1, style = "margin-top: 20px",
                                  checkboxInput("box4", "log"))
                  ),
                  
@@ -136,7 +138,8 @@ ui <- fluidPage(
                  ),
                  DT::dataTableOutput("x1"),
                  fluidRow(
-                   p(class = 'text-center', downloadButton('x3', 'Download Filtered Data'))
+                   column(3, downloadButton("x3", "Download Filtered Data")),
+                   column(3, actionButton("go_5", "Search Chemistry Dashboard"))
                  ))
              )
     )
