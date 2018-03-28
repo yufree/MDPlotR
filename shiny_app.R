@@ -253,23 +253,23 @@ server <- function(input, output, session) {
   #### For MD Plot Panel ####
   
   # input masses 
-  MD_num1 <- eventReactive(input$go_2, {
+  MD_num1 <- eventReactive(input$go_3, {
     input$num1
   })
   
-  MD_num2 <- eventReactive(input$go_2, {
+  MD_num2 <- eventReactive(input$go_3, {
     input$num2
   })
   
-  MD_num3 <- eventReactive(input$go_2, {
+  MD_num3 <- eventReactive(input$go_3, {
     input$num3
   })
   
-  MD_num4 <- eventReactive(input$go_2, {
+  MD_num4 <- eventReactive(input$go_3, {
     input$num4
   })
   
-  xmass <- eventReactive(input$go_2, {
+  xmass <- eventReactive(input$go_3, {
     MD_data()[,input$mz1]
     
   })
@@ -312,7 +312,7 @@ server <- function(input, output, session) {
       filter(intensity > input$slide1)
     
     
-    # Problem with update X variable###  
+    # Update variables#  
     
     updateSelectInput(session, inputId = 'xvar1', label = 'Specify the x variable for plot',
                       choices = names(m), selected = names(m)[2])
