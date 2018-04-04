@@ -5,11 +5,12 @@ library(shinythemes)
 library(DT)
 library(plotly)
 library(crosstalk)
-
+library(shinyjs)
 
 # UI function -------------------------------------------------------------
 
 ui <- fluidPage(
+  useShinyjs(),  # Include shinyjs
   theme = shinytheme('spacelab'),
   titlePanel("Mass Defect Plot"),
   tabsetPanel(
@@ -55,27 +56,7 @@ ui <- fluidPage(
              )
     ),
     
-    # Raw Plots Panel#
-    #Update with sunburst diagram
     
-    tabPanel("Raw plots",
-             pageWithSidebar(
-               headerPanel('Raw data plots'),
-               sidebarPanel(
-                 
-                 # "Empty inputs" - they will be updated after the data is uploaded
-                 selectInput('xcol', 'X Variable', ""),
-                 selectInput('ycol', 'Y Variable', ""),
-                 selectInput('intensity', 'Intensity Markers', ""),
-                 selectInput('hover', 'Hover text', ""),
-                 actionButton('go_1', 'Plot')
-               ),
-               mainPanel(
-                 plotlyOutput('RawPlot1'),
-                 plotlyOutput('RawPlot2')
-               )
-             )
-    ),
     # Mass Defect plots Panel #
     tabPanel("MD Plots",
              sidebarLayout(
@@ -85,45 +66,51 @@ ui <- fluidPage(
                  selectInput("intensity2", "Specify intensity variable", ""),
                  actionButton("go_2", "Calculate"),
                  tags$hr(),
-                 fluidRow(
-                   h4("Mass defect calculations"),
-                   column(4,
-                          textInput("text1", "1st MD base (optional)")),
-                   column(4,
-                          numericInput("num1", label = "1. Nominal mass (Da)", value = 12)),
-                   column(4,
-                          numericInput("num2", label = "1. Exact mass (Da)", value = 12.0000))
+                 div(
+                   fluidRow(
+                     h4("Mass defect calculations"),
+                     column(3,
+                            textInput("text1", HTML("1st MD base<br/>(optional)"))),
+                     column(3,
+                            numericInput("num1", label = HTML("1. Nominal<br/>mass (Da)"), value = 12)),
+                     column(3,
+                            numericInput("num2", label = HTML("1. Exact mass<br/>(Da)"), value = 12.0000)),
+                     column(2,
+                            selectInput("round_1", HTML("Rounding<br/>&nbsp"), choices = c("round", "ceiling", "floor"), selected = "ceiling"))
+                   ), style = "font-size:90%;"
                  ),
-                 fluidRow(
-                   column(4,
-                          textInput("text2", "2nd MD base (optional)")),
-                   column(4,
-                          numericInput("num3", label = "2. Nominal mass (Da)", value = 12)),
-                   column(4,
-                          numericInput("num4", label = "2. Exact mass (Da)", value = 12.0000))
+                 div(
+                   fluidRow(
+                     column(3,
+                            textInput("text2", HTML("2nd MD base<br/>(optional)"))),
+                     column(3,
+                            numericInput("num3", label = HTML("2. Nominal<br/>mass (Da)"), value = 14)),
+                     column(3,
+                            numericInput("num4", label = HTML("2. Exact mass<br/>(Da)"), value = 14.01565)),
+                     column(2,
+                            selectInput("round_1", HTML("Rounding<br/>&nbsp"), choices = c("round", "ceiling", "floor"), selected = "ceiling"))
+                   ), style = "font-size:90%;"
                  ),
                  actionButton('go_3', 'Update'),
+                 
+                 # Click to open a help box
+                 actionButton("helpbutton_1", "Help?"),
+                 uiOutput("helpbox_1"),
+                 
                  tags$br(),
                  tags$hr(),
+                 
                  fluidRow(h4("Plot controls"),
                           tags$br(),
                           column(5,
                                  selectInput('xvar1', 'X variable', "")),
-                          column(1, style = "margin-top: 20px",
-                                 checkboxInput("box1", "log")),
                           column(5,
-                                 selectInput("yvar1", "Y variable", "")),
-                          column(1, style = "margin-top: 20px",
-                                 checkboxInput("box2", "log"))
+                                 selectInput("yvar1", "Y variable", ""))
                  ),
                  fluidRow(column(5,
                                  selectInput('xvar2', 'X variable', "")),
-                          column(1, style = "margin-top: 20px",
-                                 checkboxInput("box3", "log")),
                           column(5,
-                                 selectInput("yvar2", "Y variable", "")),
-                          column(1, style = "margin-top: 20px",
-                                 checkboxInput("box4", "log"))
+                                 selectInput("yvar2", "Y variable", ""))
                  ),
                  
                  tags$br(),
@@ -138,9 +125,27 @@ ui <- fluidPage(
                  ),
                  DT::dataTableOutput("x1"),
                  fluidRow(
-                   column(3, downloadButton("x3", "Download Filtered Data")),
-                   column(3, actionButton("go_5", "Search Chemistry Dashboard"))
-                 ))
+                   column(3, downloadButton("x3", "Download Filtered Data"))
+                 ),
+                 tags$br(),
+                 
+                 # Using Shinyjs to open websites
+                 fluidRow(
+                   h4("Links to web tools for compound search"),
+                   column(3, align = "left", actionButton("go_5", "Chemistry Dashboard",
+                                                          onclick ="window.open('https://comptox.epa.gov/dashboard/dsstoxdb/advanced_search')")),
+                   column(3, align = "left", actionButton("open_1", "ChemSpider",
+                                                          onclick ="window.open('http://www.chemspider.com/FullSearch.aspx')")),
+                   column(2, align = "left", actionButton("open_2","EnviPat",
+                                                          onclick ="window.open('http://www.envipat.eawag.ch')")),
+                   column(2, align = "left", actionButton("open_3","EnviHomolog",
+                                                          onclick ="window.open('http://www.envihomolog.eawag.ch')")),
+                   column(2, align = "left", actionButton("open_4","Norman Massbank",
+                                                          onclick ="window.open('https://massbank.eu/MassBank/QuickSearch.html')"))
+                   
+                   
+                 )
+               )
              )
     )
   )
@@ -165,20 +170,6 @@ server <- function(input, output, session) {
     
     
     
-    # Update inputs (you could create an observer with both updateSel...)
-    # You can also constraint your choices. If you wanted select only numeric
-    # variables you could set "choices = sapply(df, is.numeric)"
-    # It depends on what do you want to do later on.
-    
-    
-    updateSelectInput(session, inputId = 'xcol', label = 'X Variable',
-                      choices = names(df), selected = names(df))
-    updateSelectInput(session, inputId = 'ycol', label = 'Y Variable',
-                      choices = names(df), selected = names(df)[2])
-    updateSelectInput(session, inputId = 'intensity', label = 'Intensity Markers',
-                      choices = names(df), selected = names(df)[3])
-    updateSelectInput(session, inputId = 'hover', label = 'Hover text',
-                      choices = names(df), selected = names(df)[4])
     updateSelectInput(session, inputId = 'mz1', label = 'Specify the m/z of the dataset',
                       choices = names(df), selected = names(df)[2])
     updateSelectInput(session, inputId = 'intensity2', label = 'Specify the intensity variable',
@@ -202,52 +193,6 @@ server <- function(input, output, session) {
   })
   
   
-  ## For Raw Plots Panel ##
-  ##ADD https://plot.ly/r/shinyapp-linked-brush/ 
-  
-  # Defining input variables for plots
-  
-  
-  plot_x <- reactive({
-    MD_data()[,input$xcol]
-  })
-  plot_y <- reactive({
-    MD_data()[,input$ycol]
-  })
-  plot_intensity <- reactive({
-    MD_data()[,input$intensity]
-  })
-  plot_hover <- reactive({
-    MD_data()[,input$hover]
-  })
-  
-  
-  #OE#
-  
-  observeEvent(input$go_1, {
-    
-    output$RawPlot1 <- renderPlotly({
-      Plot1 <- plot_ly(
-        x = plot_x(),
-        type = 'histogram')
-    })
-    
-    # A scatterplot using Plotly
-    
-    
-    output$RawPlot2 <- renderPlotly({
-      Plot2 <- plot_ly(
-        x = plot_x(),
-        y = plot_y(), 
-        type = 'scatter',
-        color = plot_intensity(),
-        colors = 'YlOrRd',
-        text = ~paste(input$hover, plot_hover())
-      )
-    })
-    
-  }) 
-  #OE#
   
   
   #### For MD Plot Panel ####
@@ -272,6 +217,24 @@ server <- function(input, output, session) {
   xmass <- eventReactive(input$go_3, {
     MD_data()[,input$mz1]
     
+  })
+  
+  # input a helpbox to explain MD and give examples of MD bases
+  output$helpbox_1 = renderUI({
+    if (input$helpbutton_1 %% 2){
+      helpText(HTML("<b>Elements</b> <br/>
+                    H: 1.007825, C: 12.0000, N: 14.003074, O: 15.994915, Si: 27.976928, P: 30.973763<br/>
+                    F: 18.998403, Cl: 34.968853, Br: 78.918336, I: 126.904477<br/>
+                    <b>Some MD bases</b> <br/>
+                    CH2: 14.01565, <br/>
+                    -H/+Cl: 33.961028, <br/>
+                    -H/+Br: 77.910511, <br/>
+                    CF2: 49.996806
+                    
+                    "))
+    } else {
+      return()
+    }
   })
   
   # Sliderinput for intensity
@@ -301,12 +264,12 @@ server <- function(input, output, session) {
     m <- m %>% 
       mutate(Kmass1 = xmass()*MD_num1()/MD_num2()) %>% 
       mutate(Knom1 = round(Kmass1, digits=0)) %>% 
-      mutate(KMD1 = round((Kmass1 - Knom1), digits = 6)) %>%
-      mutate(Kmass1 = round(Kmass1, digits = 6)) %>%
+      mutate(KMD1 = round((Kmass1 - Knom1), digits = 5)) %>%
+      mutate(Kmass1 = round(Kmass1, digits = 5)) %>%
       mutate(Kmass2 = xmass()*MD_num3()/MD_num4()) %>%
       mutate(Knom2 = round(Kmass2, digits=0)) %>%
-      mutate(KMD2 = round((Kmass2 - Knom2), digits = 6)) %>%
-      mutate(Kmass2 = round(Kmass2, digits = 6)) %>%
+      mutate(KMD2 = round((Kmass2 - Knom2), digits = 5)) %>%
+      mutate(Kmass2 = round(Kmass2, digits = 5)) %>%
       # add column with filtered intensity
       mutate(intensity = ab1()) %>%
       filter(intensity > input$slide1)
@@ -412,6 +375,6 @@ server <- function(input, output, session) {
   #OE#
   
   
-}
+  }
 
 shinyApp(ui, server)
