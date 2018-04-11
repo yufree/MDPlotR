@@ -319,7 +319,7 @@ server <- function(input, output, session) {
           layout(showlegend = T)
         
         # selected data
-        pp <- add_trace(pp, data = m[s, , drop = F], x = MDplot_x1(), y = MDplot_y1(), type = "scatter", size = ~intensity, mode = "markers",
+        pp <- add_trace(pp, data = m[s, , drop = F], x = MDplot_x1()[s], y = MDplot_y1()[s], type = "scatter", size = ~intensity[s], mode = "markers",
                         color = I('red'), name = 'Filtered')
       }
       
@@ -342,7 +342,7 @@ server <- function(input, output, session) {
           layout(showlegend = T)
         
         # selected data
-        pp <- add_trace(pp, data = m[t, , drop = F], x = MDplot_x2(), y = MDplot_y2(), type = "scatter", size = ~intensity, mode = "markers",
+        pp <- add_trace(pp, data = m[t, , drop = F], x = MDplot_x2()[t], y = MDplot_y2()[t], type = "scatter", size = ~intensity[t], mode = "markers",
                         color = I('red'), name = 'Filtered')
       }
       
