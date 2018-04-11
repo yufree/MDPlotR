@@ -1,5 +1,6 @@
 
 
+
 library(shiny)
 library(dplyr)
 library(shinythemes)
@@ -30,12 +31,13 @@ ui <- navbarPage(
                                          
                                          tags$br(),
                                          uiOutput("slide1"),
-                                         fluidRow(h4("Plot controls"),
-                                                  tags$br(),
-                                                  column(5,
-                                                         selectInput('yvar1', 'Y variable for plot 1', "")),
-                                                  column(5,
-                                                         selectInput("yvar2", "Y variable for plot 2", ""))
+                                         fluidRow(
+                                                 h4("Plot controls"),
+                                                 tags$br(),
+                                                 column(5,
+                                                        selectInput('yvar1', 'Y variable for plot 1', "")),
+                                                 column(5,
+                                                        selectInput("yvar2", "Y variable for plot 2", ""))
                                          ),
                                          actionButton('go', 'plot')
                                  ),
@@ -92,12 +94,22 @@ ui <- navbarPage(
                                  )
                          )
                  )),
-        tabPanel("Usages",
-                 p("Uploaded csv files should contain three columns with name 'mz','rt', 'intensity' and contain mass to charge(m/z), retention time and intensity data. Here is the screenshot of one demo csv file:"),
-                 br(),
-                 img(src = "csv.png", height = 500, width = 300),
-                 br(),
-                 p("After you uploaded the csv data, select atom and click plot to show the MDplots and explore interactively."))
+        tabPanel(
+                "Usages",
+                p(
+                        "Uploaded csv files should contain three columns with name 'mz','rt', 'intensity' and contain mass to charge(m/z), retention time and intensity data. Here is the screenshot of one demo csv file:"
+                ),
+                br(),
+                img(
+                        src = "csv.png",
+                        height = 500,
+                        width = 300
+                ),
+                br(),
+                p(
+                        "After you uploaded the csv data, select atom and click plot to show the MDplots and explore interactively."
+                )
+        )
 )
 
 
@@ -107,40 +119,81 @@ ui <- navbarPage(
 server <- function(input, output, session) {
         MD_data <- reactive({
                 req(input$file1) ## ?req #  require that the input is available
-                df <- read.csv(
-                        input$file1$datapath
-                )
+                df <- read.csv(input$file1$datapath)
                 # H: 1.007825, C: 12.0000, N: 14.003074, O: 15.994915, Si: 27.976928, P: 30.973763, F: 18.998403, Cl: 34.968853, Br: 78.918336, I: 126.904477, CH2: 14.01565, -H/+Cl: 33.961028, -H/+Br: 77.910511, CF2: 49.996806
-        
-                df$H <- round(df$mz * 1.007825/1 - round(df$mz * 1.007825/1,digits = 0),digits = 5)
-                df$C <- round(df$mz - round(df$mz,digits = 0),digits = 5)
-                df$N <- round(df$mz * 14.003074/14 - round(df$mz * 14.003074/14,digits = 0),digits = 5)
-                df$O <- round(df$mz * 15.994915/16 - round(df$mz * 15.994915/16,digits = 0),digits = 5)
-                df$Si <- round(df$mz * 27.976928/28 - round(df$mz * 27.976928/28,digits = 0),digits = 5)
-                df$P <- round(df$mz * 30.973763/31 - round(df$mz * 30.973763/31,digits = 0),digits = 5)
-                df$F <- round(df$mz * 18.998403/19 - round(df$mz * 18.998403/19,digits = 0),digits = 5)
-                df$Cl <- round(df$mz * 34.968853/35 - round(df$mz * 34.968853/35,digits = 0),digits = 5)
-                df$Br <- round(df$mz * 78.918336/79 - round(df$mz * 78.918336/79,digits = 0),digits = 5)
-                df$I <- round(df$mz * 126.904477/127 - round(df$mz * 126.904477/127,digits = 0),digits = 5)
-                df$CH2 <- round(df$mz * 14.01565/14 - round(df$mz * 14.01565/14,digits = 0),digits = 5)
-                df$ClH <- round(df$mz * 33.961028/34 - round(df$mz * 33.961028/34,digits = 0),digits = 5)
-                df$BrH <- round(df$mz * 77.910511/78 - round(df$mz * 77.910511/78,digits = 0),digits = 5)
-                df$CF2 <- round(df$mz * 49.996806/50 - round(df$mz * 49.996806/50,digits = 0),digits = 5)
-                updateSelectInput(session, inputId = 'yvar1', label = 'Specify the y variable for plot',
-                                  choices = names(df), selected = names(df)[4])
-                updateSelectInput(session, inputId = 'yvar2', label = 'Specify the y variable for plot',
-                                  choices = names(df), selected = names(df)[5])
+                
+                df$H <-
+                        round(df$mz * 1.007825 / 1 - round(df$mz * 1.007825 / 1, digits = 0),
+                              digits = 5)
+                df$C <-
+                        round(df$mz - round(df$mz, digits = 0), digits = 5)
+                df$N <-
+                        round(df$mz * 14.003074 / 14 - round(df$mz * 14.003074 / 14, digits = 0),
+                              digits = 5)
+                df$O <-
+                        round(df$mz * 15.994915 / 16 - round(df$mz * 15.994915 / 16, digits = 0),
+                              digits = 5)
+                df$Si <-
+                        round(df$mz * 27.976928 / 28 - round(df$mz * 27.976928 / 28, digits = 0),
+                              digits = 5)
+                df$P <-
+                        round(df$mz * 30.973763 / 31 - round(df$mz * 30.973763 / 31, digits = 0),
+                              digits = 5)
+                df$F <-
+                        round(df$mz * 18.998403 / 19 - round(df$mz * 18.998403 / 19, digits = 0),
+                              digits = 5)
+                df$Cl <-
+                        round(df$mz * 34.968853 / 35 - round(df$mz * 34.968853 / 35, digits = 0),
+                              digits = 5)
+                df$Br <-
+                        round(df$mz * 78.918336 / 79 - round(df$mz * 78.918336 / 79, digits = 0),
+                              digits = 5)
+                df$I <-
+                        round(
+                                df$mz * 126.904477 / 127 - round(df$mz * 126.904477 / 127, digits = 0),
+                                digits = 5
+                        )
+                df$CH2 <-
+                        round(df$mz * 14.01565 / 14 - round(df$mz * 14.01565 / 14, digits = 0),
+                              digits = 5)
+                df$ClH <-
+                        round(df$mz * 33.961028 / 34 - round(df$mz * 33.961028 / 34, digits = 0),
+                              digits = 5)
+                df$BrH <-
+                        round(df$mz * 77.910511 / 78 - round(df$mz * 77.910511 / 78, digits = 0),
+                              digits = 5)
+                df$CF2 <-
+                        round(df$mz * 49.996806 / 50 - round(df$mz * 49.996806 / 50, digits = 0),
+                              digits = 5)
+                updateSelectInput(
+                        session,
+                        inputId = 'yvar1',
+                        label = 'Specify the y variable for plot',
+                        choices = names(df),
+                        selected = names(df)[4]
+                )
+                updateSelectInput(
+                        session,
+                        inputId = 'yvar2',
+                        label = 'Specify the y variable for plot',
+                        choices = names(df),
+                        selected = names(df)[5]
+                )
                 return(df)
         })
         
         ## For uploading Files Panel ##
         output$slide1 <- renderUI({
-                
                 minZ <- min(MD_data()$intensity)
                 maxZ <- max(MD_data()$intensity)
                 
-                sliderInput("slide1", "Intensity filter",
-                            min = minZ, max = maxZ, value = minZ)
+                sliderInput(
+                        "slide1",
+                        "Intensity filter",
+                        min = minZ,
+                        max = maxZ,
+                        value = minZ
+                )
         })
         # add a table of the file
         output$contents <- renderTable({
@@ -160,13 +213,15 @@ server <- function(input, output, session) {
         #OE#
         observeEvent(input$go, {
                 m <- MD_data()
-                m <- m[m$intensity > input$slide1,]
+                m <- m[m$intensity > input$slide1, ]
                 d <- SharedData$new(m)
                 
                 MDplot_y1 <- reactive({
-                        m[,input$yvar1]})
+                        m[, input$yvar1]
+                })
                 MDplot_y2 <- reactive({
-                        m[,input$yvar2]})
+                        m[, input$yvar2]
+                })
                 # highlight selected rows in the scatterplot
                 output$DTPlot1 <- renderPlotly({
                         s <- input$x1_rows_selected
@@ -272,7 +327,7 @@ server <- function(input, output, session) {
                 })
                 # highlight selected rows in the table
                 output$x1 <- DT::renderDataTable({
-                        T_out1 <- m[d$selection(), ]
+                        T_out1 <- m[d$selection(),]
                         dt <-
                                 DT::datatable(
                                         m,
@@ -299,7 +354,7 @@ server <- function(input, output, session) {
                                 if (length(s)) {
                                         write.csv(m[s, , drop = FALSE], file)
                                 } else if (!length(s)) {
-                                        write.csv(m[d$selection(), ], file)
+                                        write.csv(m[d$selection(),], file)
                                 }
                         }
                 )
@@ -307,6 +362,6 @@ server <- function(input, output, session) {
         #OE#
         
         
-        }
+}
 
 shinyApp(ui, server)
