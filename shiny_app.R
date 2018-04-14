@@ -30,6 +30,7 @@ ui <- navbarPage(
                                          textInput("cus1", "Custom Mass Defect 1", 0),
                                          textInput("cus2", "Custom Mass Defect 2", 0),
                                          uiOutput("plotctr"),
+                                         checkboxInput('ins', 'show intensity as size', F),
                                          actionButton('go', 'plot')
                                  ),
                                  mainPanel(
@@ -202,11 +203,23 @@ server <- function(input, output, session) {
                         fluidRow(
                                 h4("Plot controls"),
                                 tags$br(),
-                                selectInput(
-                                        inputId = 'yvar1',
-                                        label = 'Specify the y variable for plot',
-                                        choices = names(MD_data()),
-                                        selected = names(MD_data())[4]
+                                column(
+                                        5,
+                                        selectInput(
+                                                inputId = 'yvar1',
+                                                label = 'Specify the y variable for plot',
+                                                choices = names(MD_data()),
+                                                selected = names(MD_data())[4]
+                                        )
+                                ),
+                                column(
+                                        5,
+                                        selectInput(
+                                                inputId = 'xvar1',
+                                                label = 'Specify the x variable for plot',
+                                                choices = names(MD_data()),
+                                                selected = names(MD_data())[1]
+                                        )
                                 )
                         )
                         
@@ -231,6 +244,24 @@ server <- function(input, output, session) {
                                                 choices = names(MD_data()),
                                                 selected = names(MD_data())[5]
                                         )
+                                ),
+                                column(
+                                        5,
+                                        selectInput(
+                                                inputId = 'xvar1',
+                                                label = 'Specify the x variable for plot',
+                                                choices = names(MD_data()),
+                                                selected = names(MD_data())[1]
+                                        )
+                                ),
+                                column(
+                                        5,
+                                        selectInput(
+                                                inputId = 'xvar2',
+                                                label = 'Specify the x variable for plot',
+                                                choices = names(MD_data()),
+                                                selected = names(MD_data())[1]
+                                        )
                                 )
                         )
                         
@@ -254,13 +285,28 @@ server <- function(input, output, session) {
         #OE#
         observeEvent(input$go, {
                 m <- MD_data()
-                m <- m[m$intensity > input$slide1,]
+                m <- m[m$intensity > input$slide1, ]
                 d <- SharedData$new(m)
                 
                 MDplot_y1 <- reactive({
                         m[, input$yvar1]
                 })
+                
+                MDplot_x1 <- reactive({
+                        m[, input$xvar1]
+                })
+                
+                if (input$ins) {
+                        intensity <- m$intensity
+                } else{
+                        intensity <- NULL
+                }
+                
                 if (!input$single) {
+                        MDplot_x2 <- reactive({
+                                m[, input$xvar2]
+                        })
+                        
                         MDplot_y2 <- reactive({
                                 m[, input$yvar2]
                         })
@@ -269,14 +315,13 @@ server <- function(input, output, session) {
                 # highlight selected rows in the scatterplot
                 output$DTPlot1 <- renderPlotly({
                         s <- input$x1_rows_selected
-                        
                         if (!length(s)) {
                                 p <- d %>%
                                         plot_ly(
-                                                x = ~ mz,
+                                                x = MDplot_x1(),
                                                 y = MDplot_y1(),
                                                 type = "scatter",
-                                                size = ~ intensity,
+                                                size = intensity,
                                                 mode = "markers",
                                                 color = I('black'),
                                                 name = 'Unfiltered'
@@ -291,10 +336,10 @@ server <- function(input, output, session) {
                                 pp <- m %>%
                                         plot_ly() %>%
                                         add_trace(
-                                                x = ~ mz,
+                                                x = MDplot_x1(),
                                                 y = MDplot_y1(),
                                                 type = "scatter",
-                                                size = ~ intensity,
+                                                size = intensity,
                                                 mode = "markers",
                                                 color = I('black'),
                                                 name = 'Unfiltered'
@@ -306,10 +351,10 @@ server <- function(input, output, session) {
                                         add_trace(
                                                 pp,
                                                 data = m[s, , drop = F],
-                                                x = ~ mz[s],
+                                                x = MDplot_x1()[s],
                                                 y = MDplot_y1()[s],
                                                 type = "scatter",
-                                                size = ~ intensity[s],
+                                                size = intensity[s],
                                                 mode = "markers",
                                                 color = I('red'),
                                                 name = 'Filtered'
@@ -326,10 +371,10 @@ server <- function(input, output, session) {
                                 if (!length(t)) {
                                         p <- d %>%
                                                 plot_ly(
-                                                        x = ~ mz,
+                                                        x = MDplot_x2(),
                                                         y = MDplot_y2(),
                                                         type = "scatter",
-                                                        size = ~ intensity,
+                                                        size = intensity,
                                                         mode = "markers",
                                                         color = I('black'),
                                                         name = 'Unfiltered'
@@ -344,10 +389,10 @@ server <- function(input, output, session) {
                                         pp <- m %>%
                                                 plot_ly() %>%
                                                 add_trace(
-                                                        x = ~ mz,
+                                                        x = MDplot_x2(),
                                                         y = MDplot_y2(),
                                                         type = "scatter",
-                                                        size = ~ intensity,
+                                                        size = intensity,
                                                         mode = "markers",
                                                         color = I('black'),
                                                         name = 'Unfiltered'
@@ -359,10 +404,10 @@ server <- function(input, output, session) {
                                                 add_trace(
                                                         pp,
                                                         data = m[t, , drop = F],
-                                                        x = ~ mz[t],
+                                                        x = MDplot_x2()[t],
                                                         y = MDplot_y2()[t],
                                                         type = "scatter",
-                                                        size = ~ intensity[t],
+                                                        size = intensity[t],
                                                         mode = "markers",
                                                         color = I('red'),
                                                         name = 'Filtered'
@@ -373,7 +418,7 @@ server <- function(input, output, session) {
                 }
                 # highlight selected rows in the table
                 output$x1 <- DT::renderDataTable({
-                        T_out1 <- m[d$selection(), ]
+                        T_out1 <- m[d$selection(),]
                         dt <-
                                 DT::datatable(
                                         m,
@@ -400,7 +445,7 @@ server <- function(input, output, session) {
                                 if (length(s)) {
                                         write.csv(m[s, , drop = FALSE], file)
                                 } else if (!length(s)) {
-                                        write.csv(m[d$selection(), ], file)
+                                        write.csv(m[d$selection(),], file)
                                 }
                         }
                 )
