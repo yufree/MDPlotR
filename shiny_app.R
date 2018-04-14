@@ -98,7 +98,7 @@ ui <- navbarPage(
                 ),
                 br(),
                 p(
-                        "After you uploaded the csv data, select atom(or input your mass defect in custom input box) and click plot to show the MDplots and explore interactively."
+                        "After you uploaded the csv data, select atom(or input your mass defect in custom input box) and click plot to show the MDplots. When you make changes on the left panel, you need to click plot to update the plot. However, you could explore interactively on the plot and table."
                 )
         )
 )
