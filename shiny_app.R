@@ -1,6 +1,3 @@
-
-
-
 library(shiny)
 library(dplyr)
 library(shinythemes)
@@ -28,22 +25,15 @@ ui <- navbarPage(
                                                             'text/comma-separated-values,text/plain',
                                                             '.csv')
                                          ),
-                                         
-                                         tags$br(),
+                                         checkboxInput('single', 'Single MDplot', TRUE),
                                          uiOutput("slide1"),
-                                         fluidRow(
-                                                 h4("Plot controls"),
-                                                 tags$br(),
-                                                 column(5,
-                                                        selectInput('yvar1', 'Y variable for plot 1', "")),
-                                                 column(5,
-                                                        selectInput("yvar2", "Y variable for plot 2", ""))
-                                         ),
+                                         textInput("cus1", "Custom Mass Defect 1", 0),
+                                         textInput("cus2", "Custom Mass Defect 2", 0),
+                                         uiOutput("plotctr"),
                                          actionButton('go', 'plot')
                                  ),
                                  mainPanel(
-                                         fluidRow(column(6, plotlyOutput("DTPlot1")),
-                                                  column(6, plotlyOutput("DTPlot2"))),
+                                         uiOutput("plot"),
                                          DT::dataTableOutput("x1"),
                                          fluidRow(column(
                                                  3, downloadButton("x3", "Download Filtered Data")
@@ -107,7 +97,7 @@ ui <- navbarPage(
                 ),
                 br(),
                 p(
-                        "After you uploaded the csv data, select atom and click plot to show the MDplots and explore interactively."
+                        "After you uploaded the csv data, select atom(or input your mass defect in custom input box) and click plot to show the MDplots and explore interactively."
                 )
         )
 )
@@ -122,6 +112,22 @@ server <- function(input, output, session) {
                 df <- read.csv(input$file1$datapath)
                 # H: 1.007825, C: 12.0000, N: 14.003074, O: 15.994915, Si: 27.976928, P: 30.973763, F: 18.998403, Cl: 34.968853, Br: 78.918336, I: 126.904477, CH2: 14.01565, -H/+Cl: 33.961028, -H/+Br: 77.910511, CF2: 49.996806
                 
+                if (input$cus1 != 0) {
+                        cus <- as.numeric(input$cus1)
+                        df$custom1 <-
+                                round(
+                                        df$mz * cus / round(cus) - round(df$mz * cus / round(cus), digits = 0),
+                                        digits = 5
+                                )
+                }
+                if (input$cus2 != 0) {
+                        cus <- as.numeric(input$cus2)
+                        df$custom2 <-
+                                round(
+                                        df$mz * cus / round(cus) - round(df$mz * cus / round(cus), digits = 0),
+                                        digits = 5
+                                )
+                }
                 df$H <-
                         round(df$mz * 1.007825 / 1 - round(df$mz * 1.007825 / 1, digits = 0),
                               digits = 5)
@@ -165,24 +171,10 @@ server <- function(input, output, session) {
                 df$CF2 <-
                         round(df$mz * 49.996806 / 50 - round(df$mz * 49.996806 / 50, digits = 0),
                               digits = 5)
-                updateSelectInput(
-                        session,
-                        inputId = 'yvar1',
-                        label = 'Specify the y variable for plot',
-                        choices = names(df),
-                        selected = names(df)[4]
-                )
-                updateSelectInput(
-                        session,
-                        inputId = 'yvar2',
-                        label = 'Specify the y variable for plot',
-                        choices = names(df),
-                        selected = names(df)[5]
-                )
                 return(df)
         })
         
-        ## For uploading Files Panel ##
+        # For uploading Files Panel ##
         output$slide1 <- renderUI({
                 minZ <- min(MD_data()$intensity)
                 maxZ <- max(MD_data()$intensity)
@@ -194,6 +186,55 @@ server <- function(input, output, session) {
                         max = maxZ,
                         value = minZ
                 )
+        })
+        
+        # for plot control
+        output$plot <- renderUI({
+                if (input$single) {
+                        plotlyOutput("DTPlot1")
+                } else{
+                        fluidRow(column(6, plotlyOutput("DTPlot1")),
+                                 column(6, plotlyOutput("DTPlot2")))
+                }
+        })
+        output$plotctr <- renderUI({
+                if (input$single) {
+                        fluidRow(
+                                h4("Plot controls"),
+                                tags$br(),
+                                selectInput(
+                                        inputId = 'yvar1',
+                                        label = 'Specify the y variable for plot',
+                                        choices = names(MD_data()),
+                                        selected = names(MD_data())[4]
+                                )
+                        )
+                        
+                } else{
+                        fluidRow(
+                                h4("Plot controls"),
+                                tags$br(),
+                                column(
+                                        5,
+                                        selectInput(
+                                                inputId = 'yvar1',
+                                                label = 'Specify the y variable for plot',
+                                                choices = names(MD_data()),
+                                                selected = names(MD_data())[4]
+                                        )
+                                ),
+                                column(
+                                        5,
+                                        selectInput(
+                                                inputId = 'yvar2',
+                                                label = 'Specify the y variable for plot',
+                                                choices = names(MD_data()),
+                                                selected = names(MD_data())[5]
+                                        )
+                                )
+                        )
+                        
+                }
         })
         # add a table of the file
         output$contents <- renderTable({
@@ -213,15 +254,18 @@ server <- function(input, output, session) {
         #OE#
         observeEvent(input$go, {
                 m <- MD_data()
-                m <- m[m$intensity > input$slide1, ]
+                m <- m[m$intensity > input$slide1,]
                 d <- SharedData$new(m)
                 
                 MDplot_y1 <- reactive({
                         m[, input$yvar1]
                 })
-                MDplot_y2 <- reactive({
-                        m[, input$yvar2]
-                })
+                if (!input$single) {
+                        MDplot_y2 <- reactive({
+                                m[, input$yvar2]
+                        })
+                }
+                
                 # highlight selected rows in the scatterplot
                 output$DTPlot1 <- renderPlotly({
                         s <- input$x1_rows_selected
@@ -275,59 +319,61 @@ server <- function(input, output, session) {
                 })
                 
                 # Plot 2
-                output$DTPlot2 <- renderPlotly({
-                        t <- input$x1_rows_selected
-                        
-                        if (!length(t)) {
-                                p <- d %>%
-                                        plot_ly(
-                                                x = ~ mz,
-                                                y = MDplot_y2(),
-                                                type = "scatter",
-                                                size = ~ intensity,
-                                                mode = "markers",
-                                                color = I('black'),
-                                                name = 'Unfiltered'
-                                        ) %>%
-                                        layout(showlegend = T) %>%
-                                        highlight(
-                                                "plotly_selected",
-                                                color = I('red'),
-                                                selected = attrs_selected(name = 'Filtered')
-                                        )
-                        } else if (length(t)) {
-                                pp <- m %>%
-                                        plot_ly() %>%
-                                        add_trace(
-                                                x = ~ mz,
-                                                y = MDplot_y2(),
-                                                type = "scatter",
-                                                size = ~ intensity,
-                                                mode = "markers",
-                                                color = I('black'),
-                                                name = 'Unfiltered'
-                                        ) %>%
-                                        layout(showlegend = T)
+                if (!input$single) {
+                        output$DTPlot2 <- renderPlotly({
+                                t <- input$x1_rows_selected
                                 
-                                # selected data
-                                pp <-
-                                        add_trace(
-                                                pp,
-                                                data = m[t, , drop = F],
-                                                x = ~ mz[t],
-                                                y = MDplot_y2()[t],
-                                                type = "scatter",
-                                                size = ~ intensity[t],
-                                                mode = "markers",
-                                                color = I('red'),
-                                                name = 'Filtered'
-                                        )
-                        }
-                        
-                })
+                                if (!length(t)) {
+                                        p <- d %>%
+                                                plot_ly(
+                                                        x = ~ mz,
+                                                        y = MDplot_y2(),
+                                                        type = "scatter",
+                                                        size = ~ intensity,
+                                                        mode = "markers",
+                                                        color = I('black'),
+                                                        name = 'Unfiltered'
+                                                ) %>%
+                                                layout(showlegend = T) %>%
+                                                highlight(
+                                                        "plotly_selected",
+                                                        color = I('red'),
+                                                        selected = attrs_selected(name = 'Filtered')
+                                                )
+                                } else if (length(t)) {
+                                        pp <- m %>%
+                                                plot_ly() %>%
+                                                add_trace(
+                                                        x = ~ mz,
+                                                        y = MDplot_y2(),
+                                                        type = "scatter",
+                                                        size = ~ intensity,
+                                                        mode = "markers",
+                                                        color = I('black'),
+                                                        name = 'Unfiltered'
+                                                ) %>%
+                                                layout(showlegend = T)
+                                        
+                                        # selected data
+                                        pp <-
+                                                add_trace(
+                                                        pp,
+                                                        data = m[t, , drop = F],
+                                                        x = ~ mz[t],
+                                                        y = MDplot_y2()[t],
+                                                        type = "scatter",
+                                                        size = ~ intensity[t],
+                                                        mode = "markers",
+                                                        color = I('red'),
+                                                        name = 'Filtered'
+                                                )
+                                }
+                                
+                        })
+                }
                 # highlight selected rows in the table
                 output$x1 <- DT::renderDataTable({
-                        T_out1 <- m[d$selection(),]
+                        T_out1 <- m[d$selection(), ]
                         dt <-
                                 DT::datatable(
                                         m,
@@ -354,7 +400,7 @@ server <- function(input, output, session) {
                                 if (length(s)) {
                                         write.csv(m[s, , drop = FALSE], file)
                                 } else if (!length(s)) {
-                                        write.csv(m[d$selection(),], file)
+                                        write.csv(m[d$selection(), ], file)
                                 }
                         }
                 )
