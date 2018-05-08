@@ -100,6 +100,28 @@ ui <- navbarPage(
                 p(
                         "After you uploaded the csv data, select atom(or input your mass defect in custom input box) and click plot to show the MDplots. When you make changes on the left panel, you need to click plot to update the plot. However, you could explore interactively on the plot and table."
                 )
+        ),
+        tabPanel(
+                "Mass defect caculation",
+                h5('Equation'),
+                p(
+                        "Round: Mass defect = IUPAC Mass * round(exact mass)/exact mass - round(IUPAC Mass * round(exact mass)/exact mass) "
+                ),
+                br(),
+                p(
+                        "Floor: Mass defect = IUPAC Mass * round(exact mass)/exact mass - floor(IUPAC Mass * round(exact mass)/exact mass) "
+                ),
+                br(),
+                p(
+                        "Ceiling: Mass defect = IUPAC Mass * round(exact mass)/exact mass - ceiling(IUPAC Mass * round(exact mass)/exact mass) "
+                ),
+                br(),
+                h5('Reference exact mass'),
+                p("H: 1.007825, C: 12.0000, N: 14.003074, O: 15.994915,Si: 27.976928"),
+                br(),
+                p("P: 30.973763, F: 18.998403, Cl: 34.968853, Br: 78.918336, I: 126.904477"),
+                br(),
+                p("CH2: 14.01565, -H/+Cl: 33.961028, -H/+Br: 77.910511, CF2: 49.996806")
         )
 )
 
@@ -109,69 +131,30 @@ ui <- navbarPage(
 
 server <- function(input, output, session) {
         MD_data <- reactive({
-                req(input$file1) ## ?req #  require that the input is available
+                #  require that the input is available
+                req(input$file1) 
                 df <- read.csv(input$file1$datapath)
                 # H: 1.007825, C: 12.0000, N: 14.003074, O: 15.994915, Si: 27.976928, P: 30.973763, F: 18.998403, Cl: 34.968853, Br: 78.918336, I: 126.904477, CH2: 14.01565, -H/+Cl: 33.961028, -H/+Br: 77.910511, CF2: 49.996806
                 
                 if (input$cus1 != 0) {
                         cus <- as.numeric(input$cus1)
-                        df$custom1 <-
-                                round(
-                                        df$mz * cus / round(cus) - round(df$mz * cus / round(cus), digits = 0),
-                                        digits = 5
-                                )
+                        df$custom1_round <-
+                                df$mz * round(cus)/cus  - round(df$mz * round(cus) / cus, digits = 0)
+                        df$custom1_floor <-
+                                                df$mz * round(cus) / cus  - floor(df$mz * round(cus) / cus) 
+                        df$custom1_ceiling <-
+                                                df$mz * round(cus)/cus  - ceiling(df$mz * round(cus)/cus)
+                        
                 }
                 if (input$cus2 != 0) {
                         cus <- as.numeric(input$cus2)
-                        df$custom2 <-
-                                round(
-                                        df$mz * cus / round(cus) - round(df$mz * cus / round(cus), digits = 0),
-                                        digits = 5
-                                )
+                        df$custom2_round <-
+                                df$mz * round(cus)/cus  - round(df$mz * round(cus) / cus, digits = 0)
+                        df$custom2_floor <-
+                                df$mz * round(cus) / cus  - floor(df$mz * round(cus) / cus) 
+                        df$custom3_ceiling <-
+                                df$mz * round(cus)/cus  - ceiling(df$mz * round(cus)/cus)
                 }
-                df$H <-
-                        round(df$mz * 1.007825 / 1 - round(df$mz * 1.007825 / 1, digits = 0),
-                              digits = 5)
-                df$C <-
-                        round(df$mz - round(df$mz, digits = 0), digits = 5)
-                df$N <-
-                        round(df$mz * 14.003074 / 14 - round(df$mz * 14.003074 / 14, digits = 0),
-                              digits = 5)
-                df$O <-
-                        round(df$mz * 15.994915 / 16 - round(df$mz * 15.994915 / 16, digits = 0),
-                              digits = 5)
-                df$Si <-
-                        round(df$mz * 27.976928 / 28 - round(df$mz * 27.976928 / 28, digits = 0),
-                              digits = 5)
-                df$P <-
-                        round(df$mz * 30.973763 / 31 - round(df$mz * 30.973763 / 31, digits = 0),
-                              digits = 5)
-                df$F <-
-                        round(df$mz * 18.998403 / 19 - round(df$mz * 18.998403 / 19, digits = 0),
-                              digits = 5)
-                df$Cl <-
-                        round(df$mz * 34.968853 / 35 - round(df$mz * 34.968853 / 35, digits = 0),
-                              digits = 5)
-                df$Br <-
-                        round(df$mz * 78.918336 / 79 - round(df$mz * 78.918336 / 79, digits = 0),
-                              digits = 5)
-                df$I <-
-                        round(
-                                df$mz * 126.904477 / 127 - round(df$mz * 126.904477 / 127, digits = 0),
-                                digits = 5
-                        )
-                df$CH2 <-
-                        round(df$mz * 14.01565 / 14 - round(df$mz * 14.01565 / 14, digits = 0),
-                              digits = 5)
-                df$ClH <-
-                        round(df$mz * 33.961028 / 34 - round(df$mz * 33.961028 / 34, digits = 0),
-                              digits = 5)
-                df$BrH <-
-                        round(df$mz * 77.910511 / 78 - round(df$mz * 77.910511 / 78, digits = 0),
-                              digits = 5)
-                df$CF2 <-
-                        round(df$mz * 49.996806 / 50 - round(df$mz * 49.996806 / 50, digits = 0),
-                              digits = 5)
                 return(df)
         })
         
@@ -288,13 +271,12 @@ server <- function(input, output, session) {
                 m <- m[m$intensity > input$slide1, ]
                 d <- SharedData$new(m)
                 
-                MDplot_y1 <- reactive({
+                MDplot_y1 <- 
                         m[, input$yvar1]
-                })
                 
-                MDplot_x1 <- reactive({
+                
+                MDplot_x1 <- 
                         m[, input$xvar1]
-                })
                 
                 if (input$ins) {
                         intensity <- m$intensity
@@ -303,13 +285,13 @@ server <- function(input, output, session) {
                 }
                 
                 if (!input$single) {
-                        MDplot_x2 <- reactive({
+                        MDplot_x2 <- 
                                 m[, input$xvar2]
-                        })
                         
-                        MDplot_y2 <- reactive({
+                        
+                        MDplot_y2 <- 
                                 m[, input$yvar2]
-                        })
+                        
                 }
                 
                 # highlight selected rows in the scatterplot
@@ -318,8 +300,8 @@ server <- function(input, output, session) {
                         if (!length(s)) {
                                 p <- d %>%
                                         plot_ly(
-                                                x = MDplot_x1(),
-                                                y = MDplot_y1(),
+                                                x = MDplot_x1,
+                                                y = MDplot_y1,
                                                 type = "scatter",
                                                 size = intensity,
                                                 mode = "markers",
@@ -336,8 +318,8 @@ server <- function(input, output, session) {
                                 pp <- m %>%
                                         plot_ly() %>%
                                         add_trace(
-                                                x = MDplot_x1(),
-                                                y = MDplot_y1(),
+                                                x = MDplot_x1,
+                                                y = MDplot_y1,
                                                 type = "scatter",
                                                 size = intensity,
                                                 mode = "markers",
@@ -351,8 +333,8 @@ server <- function(input, output, session) {
                                         add_trace(
                                                 pp,
                                                 data = m[s, , drop = F],
-                                                x = MDplot_x1()[s],
-                                                y = MDplot_y1()[s],
+                                                x = MDplot_x1[s],
+                                                y = MDplot_y1[s],
                                                 type = "scatter",
                                                 size = intensity[s],
                                                 mode = "markers",
@@ -371,8 +353,8 @@ server <- function(input, output, session) {
                                 if (!length(t)) {
                                         p <- d %>%
                                                 plot_ly(
-                                                        x = MDplot_x2(),
-                                                        y = MDplot_y2(),
+                                                        x = MDplot_x2,
+                                                        y = MDplot_y2,
                                                         type = "scatter",
                                                         size = intensity,
                                                         mode = "markers",
@@ -389,8 +371,8 @@ server <- function(input, output, session) {
                                         pp <- m %>%
                                                 plot_ly() %>%
                                                 add_trace(
-                                                        x = MDplot_x2(),
-                                                        y = MDplot_y2(),
+                                                        x = MDplot_x2,
+                                                        y = MDplot_y2,
                                                         type = "scatter",
                                                         size = intensity,
                                                         mode = "markers",
@@ -404,8 +386,8 @@ server <- function(input, output, session) {
                                                 add_trace(
                                                         pp,
                                                         data = m[t, , drop = F],
-                                                        x = MDplot_x2()[t],
-                                                        y = MDplot_y2()[t],
+                                                        x = MDplot_x2[t],
+                                                        y = MDplot_y2[t],
                                                         type = "scatter",
                                                         size = intensity[t],
                                                         mode = "markers",
