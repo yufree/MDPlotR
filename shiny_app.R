@@ -25,15 +25,17 @@ ui <- navbarPage(
                               '.csv')
                  ),
                  radioButtons(inputId="single", label="Single or Twin plots", 
-                              choices=c("Single","Double"), inline = TRUE),
+                              choices=c("Single","Double"), selected = "Single", inline = TRUE),
+                 radioButtons(inputId="mdr", label="Mass defect calculation", 
+                              choices=c("round","floor","ceiling"), selected = "round", inline = TRUE),
                  
                  uiOutput("slide1"),
                  textInput("cus1", "Mass Defect Base 1", 0),
                  textInput("cus2", "Mass Defect Base 2", 0),
                  uiOutput("plotctr"),
                  checkboxInput('ins', 'show intensity as size', F),
-                 actionButton('go', 'Plot')
-               ),
+                 actionButton('go', 'Plot'),
+               width = 3),
                mainPanel(
                  uiOutput("plot"),
                  DT::dataTableOutput("x1"),
@@ -139,22 +141,29 @@ server <- function(input, output, session) {
     
     if (input$cus1 != 0) {
       cus <- as.numeric(input$cus1)
-      df$custom1_round <-
-        df$mz * round(cus)/cus  - round(df$mz * round(cus) / cus, digits = 0)
-      df$custom1_floor <-
-        df$mz * round(cus) / cus  - floor(df$mz * round(cus) / cus) 
-      df$custom1_ceiling <-
-        df$mz * round(cus)/cus  - ceiling(df$mz * round(cus)/cus)
-      
+      if(input$mdr == 'round'){
+              df$md <-
+                      round(df$mz * round(cus)/cus  - round(df$mz * round(cus) / cus, digits = 0),digits = 6)
+      }else if(input$mdr == 'floor'){
+              df$md <-
+                      round(df$mz * round(cus) / cus  - floor(df$mz * round(cus) / cus) ,digits = 6)
+      }else{
+              df$md <-
+                      round(df$mz * round(cus)/cus  - ceiling(df$mz * round(cus)/cus),digits = 6)
+      }
     }
     if (input$cus2 != 0) {
       cus <- as.numeric(input$cus2)
-      df$custom2_round <-
-        df$mz * round(cus)/cus  - round(df$mz * round(cus) / cus, digits = 0)
-      df$custom2_floor <-
-        df$mz * round(cus) / cus  - floor(df$mz * round(cus) / cus) 
-      df$custom3_ceiling <-
-        df$mz * round(cus)/cus  - ceiling(df$mz * round(cus)/cus)
+      if(input$mdr == 'round'){
+              df$md2 <-
+                      round(df$mz * round(cus)/cus  - round(df$mz * round(cus) / cus, digits = 0),digits = 6)
+      }else if(input$mdr == 'floor'){
+              df$md2 <-
+                      round(df$mz * round(cus) / cus  - floor(df$mz * round(cus) / cus) ,digits = 6)
+      }else{
+              df$md2 <-
+                      round(df$mz * round(cus)/cus  - ceiling(df$mz * round(cus)/cus),digits = 6)
+      }
     }
     return(df)
   })
@@ -189,7 +198,7 @@ server <- function(input, output, session) {
         tags$br(),
         
         column(
-          5,
+          6,
           selectInput(
             inputId = 'xvar1',
             label = 'X variable for plot',
@@ -198,7 +207,7 @@ server <- function(input, output, session) {
           )
         ),
         column(
-          5,
+          6,
           selectInput(
             inputId = 'yvar1',
             label = 'Y variable for plot',
@@ -213,7 +222,7 @@ server <- function(input, output, session) {
         h4("Plot controls"),
         tags$br(),
         column(
-          5,
+          6,
           selectInput(
             inputId = 'xvar1',
             label = 'X variable for Plot 1',
@@ -222,7 +231,7 @@ server <- function(input, output, session) {
           )
         ),
         column(
-          5,
+          6,
           selectInput(
             inputId = 'yvar1',
             label = 'Y variable for Plot 1',
@@ -231,7 +240,7 @@ server <- function(input, output, session) {
           )
         ),
         column(
-          5,
+          6,
           selectInput(
             inputId = 'xvar2',
             label = 'X variable for Plot 2',
@@ -240,7 +249,7 @@ server <- function(input, output, session) {
           )
         ),
         column(
-          5,
+          6,
           selectInput(
             inputId = 'yvar2',
             label = 'Y variable for Plot 2',
@@ -298,7 +307,7 @@ server <- function(input, output, session) {
             color = I('black'),
             name = 'Unfiltered'
           ) %>%
-          layout(showlegend = T) %>%
+          layout(legend = list(orientation = "h",xanchor = "center",x = 0.5),showlegend = T) %>%
           highlight(
             "plotly_selected",
             color = I('red'),
@@ -316,7 +325,7 @@ server <- function(input, output, session) {
             color = I('black'),
             name = 'Unfiltered'
           ) %>%
-          layout(showlegend = T)
+                layout(legend = list(orientation = "h",xanchor = "center",  x = 0.5),showlegend = T)
         
         # selected data
         pp <-
@@ -351,7 +360,7 @@ server <- function(input, output, session) {
               color = I('black'),
               name = 'Unfiltered'
             ) %>%
-            layout(showlegend = T) %>%
+                  layout(legend = list(orientation = "h",xanchor = "center",x = 0.5),showlegend = T) %>%
             highlight(
               "plotly_selected",
               color = I('red'),
@@ -369,7 +378,7 @@ server <- function(input, output, session) {
               color = I('black'),
               name = 'Unfiltered'
             ) %>%
-            layout(showlegend = T)
+                  layout(legend = list(orientation = "h",xanchor = "center",x = 0.5),showlegend = T)
           
           # selected data
           pp <-
