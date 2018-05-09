@@ -12,7 +12,7 @@ ui <- navbarPage(
   useShinyjs(),
   # Include shinyjs
   theme = shinytheme('spacelab'),
-  tabPanel("Mass Defect Interactive Plot",
+  tabPanel("MDPlotR: interactive mass defect plots",
            fluidPage(
              titlePanel('Interactive MDPlot'),
              sidebarLayout(
@@ -24,8 +24,8 @@ ui <- navbarPage(
                               'text/comma-separated-values,text/plain',
                               '.csv')
                  ),
-                 radioButtons(inputId="single", label="Single or Double plots", 
-                              choices=c("single","double"), inline = TRUE),
+                 radioButtons(inputId="single", label="Single or Twin plots", 
+                              choices=c("Single","Double"), inline = TRUE),
                  
                  uiOutput("slide1"),
                  textInput("cus1", "Mass Defect Base 1", 0),
@@ -175,7 +175,7 @@ server <- function(input, output, session) {
   
   # for plot control
   output$plot <- renderUI({
-    if (input$single == "single") {
+    if (input$single == "Single") {
       plotlyOutput("DTPlot1")
     } else{
       fluidRow(column(6, plotlyOutput("DTPlot1")),
@@ -183,26 +183,27 @@ server <- function(input, output, session) {
     }
   })
   output$plotctr <- renderUI({
-    if (input$single == "single") {
+    if (input$single == "Single") {
       fluidRow(
         h4("Plot controls"),
         tags$br(),
+        
         column(
           5,
           selectInput(
-            inputId = 'yvar1',
-            label = 'Specify the y variable for plot',
+            inputId = 'xvar1',
+            label = 'X variable for plot',
             choices = names(MD_data()),
-            selected = names(MD_data())[4]
+            selected = names(MD_data())[1]
           )
         ),
         column(
           5,
           selectInput(
-            inputId = 'xvar1',
-            label = 'Specify the x variable for plot',
+            inputId = 'yvar1',
+            label = 'Y variable for plot',
             choices = names(MD_data()),
-            selected = names(MD_data())[1]
+            selected = names(MD_data())[4]
           )
         )
       )
@@ -211,24 +212,6 @@ server <- function(input, output, session) {
       fluidRow(
         h4("Plot controls"),
         tags$br(),
-        column(
-          5,
-          selectInput(
-            inputId = 'yvar1',
-            label = 'Y variable for Plot 1',
-            choices = names(MD_data()),
-            selected = names(MD_data())[4]
-          )
-        ),
-        column(
-          5,
-          selectInput(
-            inputId = 'yvar2',
-            label = 'Y variable for Plot 2',
-            choices = names(MD_data()),
-            selected = names(MD_data())[5]
-          )
-        ),
         column(
           5,
           selectInput(
@@ -241,29 +224,35 @@ server <- function(input, output, session) {
         column(
           5,
           selectInput(
+            inputId = 'yvar1',
+            label = 'Y variable for Plot 1',
+            choices = names(MD_data()),
+            selected = names(MD_data())[4]
+          )
+        ),
+        column(
+          5,
+          selectInput(
             inputId = 'xvar2',
             label = 'X variable for Plot 2',
             choices = names(MD_data()),
             selected = names(MD_data())[1]
+          )
+        ),
+        column(
+          5,
+          selectInput(
+            inputId = 'yvar2',
+            label = 'Y variable for Plot 2',
+            choices = names(MD_data()),
+            selected = names(MD_data())[7]
           )
         )
       )
       
     }
   })
-  # add a table of the file
-  output$contents <- renderTable({
-    if (is.null(MD_data())) {
-      return()
-    }
-    
-    if (input$disp == "head") {
-      return(head(MD_data()))
-    }
-    else {
-      return(MD_data())
-    }
-  })
+  
   #### For MD Plot Panel ####
   
   #OE#
@@ -285,7 +274,7 @@ server <- function(input, output, session) {
       intensity <- NULL
     }
     
-    if (input$single == "double") {
+    if (input$single == "Double") {
       MDplot_x2 <- 
         m[, input$xvar2]
       
@@ -347,7 +336,7 @@ server <- function(input, output, session) {
     })
     
     # Plot 2
-    if (input$single == "double") {
+    if (input$single == "Double") {
       output$DTPlot2 <- renderPlotly({
         t <- input$x1_rows_selected
         
@@ -413,10 +402,6 @@ server <- function(input, output, session) {
         dt
       } else {
         T_out1
-        # To display whole table and highlight selected rows then replace "T_out1" with below code chunk:
-        # DT::formatStyle(dt, "rowname", target = "row",
-        # color = DT::styleEqual(T_out1$rowname, rep("white", length(T_out1$rowname))),
-        # backgroundColor = DT::styleEqual(T_out1$rowname, rep("black", length(T_out1$rowname))))
       }
     })
     
