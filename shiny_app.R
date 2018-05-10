@@ -30,6 +30,8 @@ ui <- navbarPage(
                               choices=c("round","floor","ceiling"), selected = "round", inline = TRUE),
                  
                  uiOutput("slide1"),
+                 uiOutput("slide2"),
+                 uiOutput("slide3"),
                  textInput("cus1", "Mass Defect Base 1", 0),
                  textInput("cus2", "Mass Defect Base 2", 0),
                  uiOutput("plotctr"),
@@ -175,11 +177,35 @@ server <- function(input, output, session) {
     
     sliderInput(
       "slide1",
-      "Intensity filter",
+      "Intensity range filter",
       min = minZ,
       max = maxZ,
-      value = minZ
+      value = c(minZ,maxZ)
     )
+  })
+  output$slide2 <- renderUI({
+          minZ <- min(MD_data()$mz)
+          maxZ <- max(MD_data()$mz)
+          
+          sliderInput(
+                  "slide2",
+                  "mass to charge ratio range",
+                  min = minZ,
+                  max = maxZ,
+                  value = c(minZ,maxZ)
+          )
+  })
+  output$slide3 <- renderUI({
+          minZ <- min(MD_data()$rt)
+          maxZ <- max(MD_data()$rt)
+          
+          sliderInput(
+                  "slide3",
+                  "retention time range",
+                  min = minZ,
+                  max = maxZ,
+                  value = c(minZ,maxZ)
+          )
   })
   
   # for plot control
@@ -267,7 +293,7 @@ server <- function(input, output, session) {
   #OE#
   observeEvent(input$go, {
     m <- MD_data()
-    m <- m[m$intensity > input$slide1, ]
+    m <- m[m$intensity > input$slide1[1] & m$intensity < input$slide1[2] & m$mz>input$slide2[1] & m$mz<input$slide2[2] &m$rt>input$slide3[1] & m$rt<input$slide3[2], ]
     d <- SharedData$new(m)
     
     MDplot_y1 <- 
