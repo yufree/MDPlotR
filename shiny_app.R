@@ -14,7 +14,6 @@ ui <- navbarPage(
   theme = shinytheme('spacelab'),
   tabPanel("MDPlotR: interactive mass defect plots",
            fluidPage(
-             titlePanel('Interactive MDPlot'),
              sidebarLayout(
                sidebarPanel(
                  fileInput(
@@ -24,20 +23,28 @@ ui <- navbarPage(
                               'text/comma-separated-values,text/plain',
                               '.csv')
                  ),
-                 radioButtons(inputId="single", label="Single or Twin plots", 
+                 radioButtons(inputId="single", label="Single or Twin plots",
                               choices=c("Single","Double"), selected = "Single", inline = TRUE),
-                 radioButtons(inputId="mdr", label="Mass defect calculation", 
-                              choices=c("round","floor","ceiling"), selected = "round", inline = TRUE),
+                 fluidRow(
+                   column(6,
+                          textInput("cus1", "MD Base 1", value = 0)),
+                   column(6,
+                          selectInput(inputId="mdr1", label="Rounding 1",
+                                      choices=c("round","floor","ceiling"), selected = "round"))),
                  
+                 fluidRow(
+                   column(6,
+                          textInput("cus2", "MD Base 2", value = 0)),
+                   column(6,
+                          selectInput(inputId="mdr2", label="Rounding 2",
+                                      choices=c("round","floor","ceiling"), selected = "round"))),
+                 actionButton('go', 'Plot'),
+                 uiOutput("plotctr"),
                  uiOutput("slide1"),
                  uiOutput("slide2"),
                  uiOutput("slide3"),
-                 textInput("cus1", "Mass Defect Base 1", 0),
-                 textInput("cus2", "Mass Defect Base 2", 0),
-                 uiOutput("plotctr"),
-                 checkboxInput('ins', 'show intensity as size', F),
-                 actionButton('go', 'Plot'),
-               width = 3),
+                 checkboxInput('ins', 'Show intensity as size', F),
+                 width = 3),
                mainPanel(
                  uiOutput("plot"),
                  DT::dataTableOutput("x1"),
@@ -143,28 +150,28 @@ server <- function(input, output, session) {
     
     if (input$cus1 != 0) {
       cus <- as.numeric(input$cus1)
-      if(input$mdr == 'round'){
-              df$md <-
-                      round(df$mz * round(cus)/cus  - round(df$mz * round(cus) / cus, digits = 0),digits = 6)
-      }else if(input$mdr == 'floor'){
-              df$md <-
-                      round(df$mz * round(cus) / cus  - floor(df$mz * round(cus) / cus) ,digits = 6)
+      if(input$mdr1 == 'round'){
+        df$MD1 <-
+          round(df$mz * round(cus)/cus  - round(df$mz * round(cus) / cus, digits = 0),digits = 6)
+      }else if(input$mdr1 == 'floor'){
+        df$MD1 <-
+          round(df$mz * round(cus) / cus  - floor(df$mz * round(cus) / cus) ,digits = 6)
       }else{
-              df$md <-
-                      round(df$mz * round(cus)/cus  - ceiling(df$mz * round(cus)/cus),digits = 6)
+        df$MD1 <-
+          round(df$mz * round(cus)/cus  - ceiling(df$mz * round(cus)/cus),digits = 6)
       }
     }
     if (input$cus2 != 0) {
       cus <- as.numeric(input$cus2)
-      if(input$mdr == 'round'){
-              df$md2 <-
-                      round(df$mz * round(cus)/cus  - round(df$mz * round(cus) / cus, digits = 0),digits = 6)
-      }else if(input$mdr == 'floor'){
-              df$md2 <-
-                      round(df$mz * round(cus) / cus  - floor(df$mz * round(cus) / cus) ,digits = 6)
+      if(input$mdr2 == 'round'){
+        df$MD2 <-
+          round(df$mz * round(cus)/cus  - round(df$mz * round(cus) / cus, digits = 0),digits = 6)
+      }else if(input$mdr2 == 'floor'){
+        df$MD2 <-
+          round(df$mz * round(cus) / cus  - floor(df$mz * round(cus) / cus) ,digits = 6)
       }else{
-              df$md2 <-
-                      round(df$mz * round(cus)/cus  - ceiling(df$mz * round(cus)/cus),digits = 6)
+        df$MD2 <-
+          round(df$mz * round(cus)/cus  - ceiling(df$mz * round(cus)/cus),digits = 6)
       }
     }
     return(df)
@@ -184,28 +191,28 @@ server <- function(input, output, session) {
     )
   })
   output$slide2 <- renderUI({
-          minZ <- min(MD_data()$mz)
-          maxZ <- max(MD_data()$mz)
-          
-          sliderInput(
-                  "slide2",
-                  "mass to charge ratio range",
-                  min = minZ,
-                  max = maxZ,
-                  value = c(minZ,maxZ)
-          )
+    minZ <- min(MD_data()$mz)
+    maxZ <- max(MD_data()$mz)
+    
+    sliderInput(
+      "slide2",
+      "mass to charge ratio range",
+      min = minZ,
+      max = maxZ,
+      value = c(minZ,maxZ)
+    )
   })
   output$slide3 <- renderUI({
-          minZ <- min(MD_data()$rt)
-          maxZ <- max(MD_data()$rt)
-          
-          sliderInput(
-                  "slide3",
-                  "retention time range",
-                  min = minZ,
-                  max = maxZ,
-                  value = c(minZ,maxZ)
-          )
+    minZ <- min(MD_data()$rt)
+    maxZ <- max(MD_data()$rt)
+    
+    sliderInput(
+      "slide3",
+      "retention time range",
+      min = minZ,
+      max = maxZ,
+      value = c(minZ,maxZ)
+    )
   })
   
   # for plot control
@@ -293,7 +300,7 @@ server <- function(input, output, session) {
   #OE#
   observeEvent(input$go, {
     m <- MD_data()
-    m <- m[m$intensity > input$slide1[1] & m$intensity < input$slide1[2] & m$mz>input$slide2[1] & m$mz<input$slide2[2] &m$rt>input$slide3[1] & m$rt<input$slide3[2], ]
+    m <- m[m$intensity >= input$slide1[1] & m$intensity <= input$slide1[2] & m$mz >= input$slide2[1] & m$mz <= input$slide2[2] &m$rt >= input$slide3[1] & m$rt <= input$slide3[2], ]
     d <- SharedData$new(m)
     
     MDplot_y1 <- 
@@ -303,6 +310,7 @@ server <- function(input, output, session) {
     MDplot_x1 <- 
       m[, input$xvar1]
     
+    # Checkbox option for size of markers by intensity
     if (input$ins) {
       intensity <- m$intensity
     } else{
@@ -330,6 +338,7 @@ server <- function(input, output, session) {
             type = "scatter",
             size = intensity,
             mode = "markers",
+            marker = list(line = list(width = 1, color = '#FFFFFF')),
             color = I('black'),
             name = 'Unfiltered'
           ) %>%
@@ -348,10 +357,11 @@ server <- function(input, output, session) {
             type = "scatter",
             size = intensity,
             mode = "markers",
+            marker = list(line = list(width = 1, color = '#FFFFFF')),
             color = I('black'),
             name = 'Unfiltered'
           ) %>%
-                layout(legend = list(orientation = "h",xanchor = "center",  x = 0.5),showlegend = T)
+          layout(legend = list(orientation = "h",xanchor = "center",  x = 0.5),showlegend = T)
         
         # selected data
         pp <-
@@ -363,6 +373,7 @@ server <- function(input, output, session) {
             type = "scatter",
             size = intensity[s],
             mode = "markers",
+            marker = list(line = list(width = 1, color = '#FFFFFF')),
             color = I('red'),
             name = 'Filtered'
           )
@@ -383,10 +394,11 @@ server <- function(input, output, session) {
               type = "scatter",
               size = intensity,
               mode = "markers",
+              marker = list(line = list(width = 1, color = '#FFFFFF')),
               color = I('black'),
               name = 'Unfiltered'
             ) %>%
-                  layout(legend = list(orientation = "h",xanchor = "center",x = 0.5),showlegend = T) %>%
+            layout(legend = list(orientation = "h",xanchor = "center",x = 0.5),showlegend = T) %>%
             highlight(
               "plotly_selected",
               color = I('red'),
@@ -401,10 +413,11 @@ server <- function(input, output, session) {
               type = "scatter",
               size = intensity,
               mode = "markers",
+              marker = list(line = list(width = 1, color = '#FFFFFF')),
               color = I('black'),
               name = 'Unfiltered'
             ) %>%
-                  layout(legend = list(orientation = "h",xanchor = "center",x = 0.5),showlegend = T)
+            layout(legend = list(orientation = "h",xanchor = "center",x = 0.5),showlegend = T)
           
           # selected data
           pp <-
@@ -416,6 +429,7 @@ server <- function(input, output, session) {
               type = "scatter",
               size = intensity[t],
               mode = "markers",
+              marker = list(line = list(width = 1, color = '#FFFFFF')),
               color = I('red'),
               name = 'Filtered'
             )
