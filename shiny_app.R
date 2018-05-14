@@ -67,7 +67,7 @@ ui <- navbarPage(
                         ),
                         mainPanel(
                                 uiOutput("plot"),
-                                DT::dataTableOutput("x1"),
+                                DTOutput("x1"),
                                 fluidRow(column(
                                         3, downloadButton("x3", "Download Filtered Data")
                                 )),
@@ -567,7 +567,7 @@ server <- function(input, output, session) {
                         })
                 }
                 # highlight selected rows in the table
-                output$x1 <- DT::renderDataTable({
+                output$x1 <- renderDT({
                         T_out1 <- m[d$selection(), ]
                         dt <-
                                 DT::datatable(
