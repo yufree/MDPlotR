@@ -59,6 +59,7 @@ ui <- navbarPage(
                  )),
         actionButton('go', 'Plot'),
         uiOutput("plotctr"),
+        uiOutput("plotctr2"),
         uiOutput("slide1"),
         uiOutput("slide2"),
         uiOutput("slide3"),
@@ -337,14 +338,28 @@ server <- function(input, output, session) {
             inputId = 'yvar2',
             label = 'Y variable for Plot 2',
             choices = names(MD_data()),
-            selected = names(MD_data())[7]
+            selected = names(MD_data())[4]
           )
         )
       )
-      
     }
   })
-  
+  output$plotctr2 <- renderUI({
+          if (input$single == "Single") {
+                  fluidRow(
+                          tags$br(),
+                          textInput('x1', 'x axis label', input$xvar1),
+                          textInput('y1', 'y axis label', input$yvar1))
+                  } else{
+                                  fluidRow(
+                                          tags$br(),
+                                          textInput('x1', 'x axis label for plot 1', input$xvar1),
+                                          textInput('y1', 'y axis label for plot 1', input$yvar1),
+                                          textInput('x2', 'x axis label for plot 2', input$xvar2),
+                                          textInput('y2', 'y axis label for plot 2', input$yvar2)          
+                          )}
+          
+  })
   #### For MD Plot Panel ####
   
   #OE#
@@ -409,8 +424,8 @@ server <- function(input, output, session) {
               y = 100
             ),
             showlegend = T,
-            xaxis = list(title = input$xvar1),
-            yaxis = list(title = input$yvar1)
+            xaxis = list(title = input$x1),
+            yaxis = list(title = input$y1)
           ) %>%
           highlight(
             "plotly_selected",
@@ -443,8 +458,8 @@ server <- function(input, output, session) {
               y = 100
             ),
             showlegend = T,
-            xaxis = list(title = input$xvar1),
-            yaxis = list(title = input$yvar1)
+            xaxis = list(title = input$x1),
+            yaxis = list(title = input$y1)
           )
         
         # selected data
@@ -500,8 +515,8 @@ server <- function(input, output, session) {
                 y = 100
               ),
               showlegend = T,
-              xaxis = list(title = input$xvar2),
-              yaxis = list(title = input$yvar2)
+              xaxis = list(title = input$x2),
+              yaxis = list(title = input$y2)
             ) %>%
             highlight(
               "plotly_selected",
@@ -534,8 +549,8 @@ server <- function(input, output, session) {
                 y = 100
               ),
               showlegend = T,
-              xaxis = list(title = input$xvar2),
-              yaxis = list(title = input$yvar2)
+              xaxis = list(title = input$x2),
+              yaxis = list(title = input$y2)
             )
           
           # selected data
