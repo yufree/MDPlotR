@@ -23,13 +23,6 @@ ui <- navbarPage(
                      'text/comma-separated-values,text/plain',
                      '.csv')
         ),
-        radioButtons(
-          inputId = "single",
-          label = "Single or Double plots",
-          choices = c("Single", "Double"),
-          selected = "Single",
-          inline = TRUE
-        ),
         fluidRow(column(6,
                         textInput(
                           "cus1", "MD Base 1", value = 0
@@ -57,7 +50,15 @@ ui <- navbarPage(
                      selected = "round"
                    )
                  )),
-        actionButton('go', 'Plot'),
+        actionButton('go', 'Plot',width = '100%'),
+        br(),
+        radioButtons(
+                inputId = "single",
+                label = "Single or Double plots",
+                choices = c("Single", "Double"),
+                selected = "Single",
+                inline = TRUE
+        ),
         uiOutput("plotctr"),
         uiOutput("plotctr2"),
         uiOutput("slide1"),
@@ -138,6 +139,12 @@ ui <- navbarPage(
     "Mass defect calculation",
     h5('Equation'),
     p(
+            "Mass defect = measured mass - round(measured mass) "
+    ),
+    p(
+            "Relative Mass defect = (measured mass - round(measured mass))/measured mass * 10^6 "
+    ),
+    p(
       "Round: Mass defect = IUPAC Mass * round(exact mass)/exact mass - round(IUPAC Mass * round(exact mass)/exact mass) "
     ),
     br(),
@@ -173,7 +180,8 @@ server <- function(input, output, session) {
     #  require that the input is available
     req(input$file1)
     df <- read.csv(input$file1$datapath)
-    
+    df$RMD <- (df$mz - round(df$mz))/df$mz * 10^6
+    df$MD <- (df$mz - round(df$mz)) * 10^3
     
     if (input$cus1 != 0) {
       cus <- as.numeric(input$cus1)
